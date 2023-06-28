@@ -7,7 +7,7 @@ import { AuthProvider } from 'react-auth-kit';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-    <React.StrictMode>
+    <React.Fragment>
         <AuthProvider
             authType="cookie"
             authName="_auth"
@@ -17,5 +17,5 @@ root.render(
                 <App />
             </BrowserRouter>
         </AuthProvider>
-    </React.StrictMode>
+    </React.Fragment>
 );

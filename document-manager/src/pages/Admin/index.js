@@ -1,12 +1,13 @@
 import React from 'react';
-import Table from '../../components/Table';
+import Table from '../../components/../components/Table/admin';
 import Toolbar from '@mui/material/Toolbar';
+
 
 export default function index() {
     return (
-        <div style={{ width: '100%' }}>
+        <div >
             <Toolbar />
-            <Table />
+            <Table/>
         </div>
     );
 }

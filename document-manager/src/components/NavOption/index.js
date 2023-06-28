@@ -14,11 +14,15 @@ import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { Link as RouterLink } from 'react-router-dom';
+import { useAuthUser, useSignOut } from 'react-auth-kit';
+
 
 const drawerWidth = 240;
 
 const SideNavigation = () => {
     const [ isOpen, setIsOpen ] = React.useState(false);
+    const authData = useAuthUser();
+    const signOut = useSignOut();
 
     const handleDrawerToggle = () => {
         setIsOpen(!isOpen);
@@ -28,9 +32,17 @@ const SideNavigation = () => {
         { text: 'Project Status', icon: <HomeWorkIcon />, path: '/' },
         { text: 'Documents', icon: <CollectionsIcon />, path: '/documents' },
         { text: 'Project Gallery', icon: <DocumentScannerIcon />, path: '/gallery' },
-        { text: 'Profile', icon: <AccountCircleIcon />, path: '/profile' },
-        { text: 'Logout', icon: <LogoutIcon />, path: '/logout' },
+        {
+            text: 'Logout',
+            icon: <LogoutIcon />,
+            path: '/auth',
+            onClick: signOut, // Add this onClick handler
+        },
     ];
+
+    if (authData && authData().userRole === 'Admin') {
+        options.push({ text: 'Admin', icon: <AccountCircleIcon />, path: '/admin' });
+    }
 
     return (
         <Box sx={{ display: 'flex' }}>
@@ -49,14 +61,19 @@ const SideNavigation = () => {
                 <Divider />
                 <List>
                     {options.map((option) => {
-                        return <ListItem key={option.text} disablePadding>
-                            <ListItemButton component={RouterLink} to={option.path}>
-                                <ListItemIcon>{option.icon}</ListItemIcon>
-                                <ListItemText primary={option.text} />
-                            </ListItemButton>
-                        </ListItem>;
-                    }
-                    )}
+                        return (
+                            <ListItem key={option.text} disablePadding>
+                                <ListItemButton
+                                    component={RouterLink}
+                                    to={option.path}
+                                    onClick={option.onClick} // Add this onClick handler
+                                >
+                                    <ListItemIcon>{option.icon}</ListItemIcon>
+                                    <ListItemText primary={option.text} />
+                                </ListItemButton>
+                            </ListItem>
+                        );
+                    })}
                 </List>
             </Drawer>
         </Box>
@@ -64,3 +81,4 @@ const SideNavigation = () => {
 };
 
 export default SideNavigation;
+

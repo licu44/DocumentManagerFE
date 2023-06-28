@@ -8,6 +8,7 @@ export const login = async (username, password) => {
             username: username,
             password: password
         });
+        console.log(response, 'response');
 
         const { data } = response;
         return data;
@@ -24,15 +25,14 @@ export const useAuthSignIn = () => {
     const signInAndSetToken = async (username, password) => {
         try {
             const response = await login(username, password);
-
+            console.log(response);
             sigIn({
-                token: response,
-                expiresIn: 3600,
+                token: response.token,
+                expiresIn: 60,
                 tokenType: 'Bearer',
-                authState: { username: username }
+                authState: { userId: response.userId, userRole: response.role },
             });
 
-            // Redirect to the home page upon successful login
             navigate('/');
         } catch (error) {
             console.error(error);

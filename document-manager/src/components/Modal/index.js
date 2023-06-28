@@ -6,14 +6,42 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import axios from 'axios';
-import { useAuthHeader } from 'react-auth-kit';
+import { useAuthHeader, useAuthUser } from 'react-auth-kit';
+import { UserContext } from '../../context';
+import { useContext } from 'react';
+import { useEffect } from 'react';
+import { useAuthDataContext } from '../../context';
 
-export default function Index({ onClose }) {
+
+export default function Index({ onClose, id, status, docName, updateTableData }) {
     const [ selectedFile, setSelectedFile ] = useState(null);
     const [ showForm, setShowForm ] = useState(false);
     const [ formData, setFormData ] = useState({});
     const [ backendResponse, setBackendResponse ] = useState(null);
     const auth = useAuthHeader();
+
+    const userId = useAuthDataContext();
+
+
+    useEffect(() => {
+        if(status) {
+            axios.get(`https://localhost:7227/api/TextManagement/documentFields/${userId}/${id}`, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': auth(),
+                } })
+                .then((response) => {
+                    setBackendResponse(response.data);
+                    setFormData(response.data);
+                    setShowForm(true);
+                    setSelectedFile(true);
+                })
+                .catch((error) => {
+                    return console.error('Error fetching documents:', error);
+                });
+        }
+    }, [ status ]);
+
 
     const handleChange = ({ target: { name, value } }) => {
         setFormData((prevData) => {
@@ -26,15 +54,19 @@ export default function Index({ onClose }) {
         const data = new FormData();
         data.append('file', file);
         try {
-            const response = await axios.post('https://localhost:7227/api/TextManagement/register', data, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': auth(),
-                },
-            });
+            const response = await
+            axios.post(`https://localhost:7227/api/TextManagement/processFile/?userId=${userId}&documentType=${id}`,
+                data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        'Authorization': auth(),
+                    },
+                });
             setBackendResponse(response.data);
+            setFormData(response.data);
             setShowForm(true);
             setSelectedFile(true);
+            updateTableData();
         } catch (error) {
             console.error(error);
         }
@@ -42,7 +74,19 @@ export default function Index({ onClose }) {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        // Perform form submission logic here
+        try {
+            await axios.put(`https://localhost:7227/api/TextManagement/update/${userId}/${id}`,
+                formData, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': auth(),
+                    },
+                });
+            updateTableData();
+        } catch (error) {
+            console.error(error);
+        }
+        onClose();
     };
 
     const style = {
@@ -60,10 +104,12 @@ export default function Index({ onClose }) {
     return (
         <Modal open={true} onClose={onClose}>
             <Box sx={style}>
-                { !selectedFile &&
+                <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
+                    {docName}
+                </Typography>
+                { !selectedFile && !status &&
                     <>
-                        <Typography variant="subtitle1" sx={{ mb: 2 }}>Upload File:</Typography>
-                        <Button variant="contained" component="label" sx={{ mt: 2 }}>
+                        <Button variant="contained" component="label" sx={{ mt: 2, display: 'flex' }}>
                             <CloudUploadIcon />
                             Upload
                             <input type="file" hidden onChange={handleUpload} />
@@ -72,12 +118,34 @@ export default function Index({ onClose }) {
                 }
                 { selectedFile && backendResponse && showForm &&
                     <>
-                        <Typography id="modal-modal-title" variant="h6" component="h2">Form in a modal</Typography>
-                        <Typography id="modal-modal-description" sx={{ mt: 2 }}>Please fill out the form fields:</Typography>
+                        <Typography
+                            id="modal-modal-description"
+                            variant="h6"
+                            sx={{ mt: 2 }}
+                        >
+                        Please check the form fields:
+                        </Typography>
                         <form onSubmit={handleSubmit}>
-                            <TextField name="fieldName1" label="Field Name 1" value={formData.fieldName1 || ''} onChange={handleChange} fullWidth margin="normal" />
-                            <TextField name="fieldName2" label="Field Name 2" value={formData.fieldName2 || ''} onChange={handleChange} fullWidth margin="normal" />
-                            <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>Submit</Button>
+                            {Object.entries(backendResponse).map(([ key, value ]) => {
+                                return <TextField
+                                    key={key}
+                                    name={key}
+                                    label={key.charAt(0).toUpperCase() + key.slice(1)}
+                                    value={formData[key] || value}
+                                    onChange={handleChange}
+                                    fullWidth
+                                    margin="normal"
+                                />;
+                            }
+                            )}
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                color="primary"
+                                sx={{ mt: 2, width: '100%' }}
+                            >
+                            Submit
+                            </Button>
                         </form>
                     </>
                 }

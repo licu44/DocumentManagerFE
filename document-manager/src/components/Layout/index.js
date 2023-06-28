@@ -7,6 +7,7 @@ import Header from '../Header/index.js';
 const Layout = () => {
     const [ mobileOpen, setMobileOpen ] = useState(false);
 
+
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
     };
@@ -15,8 +16,8 @@ const Layout = () => {
     const getPageTitle = (pathname) => {
         if (pathname === '/') {
             return 'Status';
-        } else if (pathname === '/profile') {
-            return 'Profile';
+        } else if (pathname === '/admin') {
+            return 'Admin';
         } else if (pathname === '/documents') {
             return 'Documents';
         } else if (pathname === '/gallery') {

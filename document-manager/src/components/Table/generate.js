@@ -10,7 +10,7 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
+import DownloadIcon from '@mui/icons-material/Download';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import Modal from '../Modal';
 import Button from '@mui/material/Button';
@@ -18,7 +18,8 @@ import { useAuthHeader, useAuthUser } from 'react-auth-kit';
 import { UserContext } from '../../context';
 import { useContext } from 'react';
 import Tooltip from '@mui/material/Tooltip';
-import GenerateTable from './generate';
+import { saveAs } from 'file-saver';
+import IconButton from '@mui/material/IconButton';
 import { useAuthDataContext } from '../../context';
 
 
@@ -61,33 +62,25 @@ const StyledTableRow = styled(TableRow)(({ theme }) => {
     };
 });
 
-export default function CustomizedTables() {
+export default function CustomizedTables({ setShowButton, refreshTable }) {
     const auth = useAuthHeader();
+    const authData = useAuthUser();
 
     const userId = useAuthDataContext();
 
 
     const [ docs, setDocs ] = useState([]);
-    const [ isOpen, setIsOpen ] = useState(false);
-    const [ selectedId, setSelectedId ] = useState('');
-    const [ selectedStatus, setSelectedStatus ] = useState('');
-    const [ selectedDocName, setSelectedDocName ] = useState('');
-    const [ generatedDocs, setGeneratedDocs ] = useState(false);
-    const [ showButton, setShowButton ] = useState(false);
-    const [ refreshTable, setRefreshTable ] = useState();
-
-    console.log(showButton, 'showButton');
 
     const updateTableData = () => {
-        axios.get(`https://localhost:7227/api/TextManagement/${userId}/documents`, {
+        axios.get(`https://localhost:7227/api/TextManagement/${userId}/documents/generated`, {
             headers: {
                 'Content-Type': 'multipart/form-data',
                 'Authorization': auth(),
             } })
             .then((response) => {
                 setDocs(response.data);
-                setGeneratedDocs(response.data.some((item) => {
-                    return item.status === null;
+                setShowButton(response.data.some((item) => {
+                    return item.creationDate === null;
                 }));
             })
             .catch((error) => {
@@ -95,51 +88,36 @@ export default function CustomizedTables() {
             });
     };
 
-    const handleGenerate = async (id) => {
+
+    useEffect(() => {
+        updateTableData();
+    }, [ refreshTable ]);
+
+    const handleClick = async (docName) => {
         try {
-            await axios.get(`https://localhost:7227/api/TextManagement/${userId}/generate`,
+            const response = await axios.get(`https://localhost:7227/api/TextManagement/${userId}/${docName}/download`,
                 {
+                    responseType: 'blob',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': auth(),
                     },
+                }
+            );
+
+            const blob = new Blob(
+                [ response.data ],
+                {
+                    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
                 });
-            setRefreshTable(true);
+            saveAs(blob, `${docName}-${userId}.docx`);
         } catch (error) {
             console.error(error);
         }
     };
 
-
-    useEffect(() => {
-        updateTableData();
-    }, []);
-
-    const handleClick = (id, status, docName) => {
-        setIsOpen(true);
-        setSelectedId(id);
-        setSelectedStatus(status);
-        setSelectedDocName(docName);
-    };
-
-    const handleClose = () => {
-        setIsOpen(false);
-        setSelectedId('');
-    };
-
     return (
         <>
-            {isOpen &&
-            <Modal
-                id={selectedId}
-                onClose={handleClose}
-                status={selectedStatus}
-                docName={selectedDocName}
-                updateTableData={updateTableData}
-            />}
-            <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mt: 3, ml:3 }}>
-                    Upload documents:
-            </Typography>
             <Box style={{ padding: '35px' }}>
                 <TableContainer component={Paper}>
                     <Table aria-label="customized table">
@@ -147,16 +125,15 @@ export default function CustomizedTables() {
                             <TableRow>
                                 <StyledTableCell colSpan={6}>
                                     <Typography variant="h5" sx={{ fontWeight: 'bold', lineHeight: 0, mt: 2 }}>
-                                        Necessary Documents
+                                        Generated Docs
                                     </Typography>
                                 </StyledTableCell>
                             </TableRow>
                             <TableRow>
                                 <StyledTableCell>ID</StyledTableCell>
-                                <StyledTableCell>Type</StyledTableCell>
-                                <StyledTableCell align="right">Upload Date</StyledTableCell>
-                                <StyledTableCell align="right">Status</StyledTableCell>
-                                <StyledTableCell align="right"></StyledTableCell>
+                                <StyledTableCell>Name</StyledTableCell>
+                                <StyledTableCell >Creation Date</StyledTableCell>
+                                <StyledTableCell align="center">Download</StyledTableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -166,20 +143,17 @@ export default function CustomizedTables() {
                                         {row.docId}
                                     </StyledTableCell>
                                     <StyledTableCell>{row.docName}</StyledTableCell>
-                                    <StyledTableCell align="right">{row.creationDate}</StyledTableCell>
-                                    <StatusTableCell align="right" status={row.status}>
-                                        {row.status ? row.status : 'NOT UPLOADED'}
-                                    </StatusTableCell>
-                                    <StyledTableCell align="right">
+                                    <StyledTableCell >{row.creationDate}</StyledTableCell>
+                                    <StyledTableCell align="center">
                                         <IconButton
                                             aria-label="delete"
                                             color="primary"
                                             size="small"
                                             onClick={() => {
-                                                handleClick(row.docId, row.status, row.docName);
+                                                handleClick(row.docName);
                                             }}
                                         >
-                                            <OpenInNewIcon fontSize="small" />
+                                            <DownloadIcon fontSize="small" />
                                         </IconButton>
                                     </StyledTableCell>
                                 </StyledTableRow>;
@@ -189,43 +163,6 @@ export default function CustomizedTables() {
                     </Table>
                 </TableContainer>
             </Box>
-            <Tooltip title={generatedDocs ? 'Upload all the necessary documents' : ''}>
-                <span>
-                    <Box
-                        sx={{
-                            opacity: !generatedDocs ? 1 : 0.5
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                display: 'flex',
-                            }}
-                        >
-
-                            <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', ml:3 }}>
-                    Generate documents:
-                            </Typography>
-                            {showButton &&
-                            <Tooltip title={generatedDocs ? 'Documents had been allready generated' : ''}>
-                                <Button
-                                    type="submit"
-                                    variant="contained"
-                                    color="primary"
-                                    sx={{ fontWeight: 'bold', ml:3 }}
-                                    disabled={generatedDocs}
-                                    onClick={handleGenerate}
-                                >
-                                    GENERATE
-                                </Button>
-                            </Tooltip>
-                            }
-                        </Box>
-                        <GenerateTable setShowButton={setShowButton} refreshTable={refreshTable}/>
-                    </Box>
-                </span>
-            </Tooltip>
-
-
         </>
     );
 }
