@@ -31,12 +31,13 @@ const SideNavigation = () => {
     const options = [
         { text: 'Project Status', icon: <HomeWorkIcon />, path: '/' },
         { text: 'Documents', icon: <CollectionsIcon />, path: '/documents' },
-        { text: 'Project Gallery', icon: <DocumentScannerIcon />, path: '/gallery' },
         {
             text: 'Logout',
             icon: <LogoutIcon />,
             path: '/auth',
-            onClick: signOut, // Add this onClick handler
+            onClick: () => {
+                signOut();
+            },
         },
     ];
 
@@ -66,7 +67,7 @@ const SideNavigation = () => {
                                 <ListItemButton
                                     component={RouterLink}
                                     to={option.path}
-                                    onClick={option.onClick} // Add this onClick handler
+                                    onClick={option.onClick}
                                 >
                                     <ListItemIcon>{option.icon}</ListItemIcon>
                                     <ListItemText primary={option.text} />

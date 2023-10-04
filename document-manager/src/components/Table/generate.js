@@ -149,6 +149,7 @@ export default function CustomizedTables({ setShowButton, refreshTable }) {
                                             aria-label="delete"
                                             color="primary"
                                             size="small"
+                                            disabled={!row.creationDate}
                                             onClick={() => {
                                                 handleClick(row.docName);
                                             }}

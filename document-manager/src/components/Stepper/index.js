@@ -93,6 +93,6 @@ ColorlibStepIcon.propTypes = {
     className: PropTypes.string,
     completed: PropTypes.bool,
     icon: PropTypes.node,
-    icons: PropTypes.object, // new propType for icons
+    icons: PropTypes.object,
 };
 

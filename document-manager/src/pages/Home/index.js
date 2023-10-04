@@ -93,7 +93,7 @@ const Index = () => {
                 </Typography>
                 <Stepper
                     data={statusData.feedbackStatuses}
-                    active={statusData.userStatus.feddbackId - 1}
+                    active={ statusData.userStatus ? statusData.userStatus.feddbackId - 1 : 0 }
                     icons={iconsFeedback}
 
                 />
@@ -102,7 +102,7 @@ const Index = () => {
                 </Typography>
                 <Stepper
                     data={statusData.authorizationStatuses}
-                    active={statusData.userStatus.authorizationId - 1}
+                    active={statusData.userStatus ? statusData.userStatus.authorizationId - 1 : 0}
                     icons={iconsAuthorization}
 
                 />
@@ -111,7 +111,7 @@ const Index = () => {
                 </Typography>
                 <Stepper
                     data={statusData.engineeringStatuses}
-                    active={statusData.userStatus.engineeringId - 1}
+                    active={statusData.userStatus ? statusData.userStatus.engineeringId - 1 : 0}
                     icons={iconsEngineering}
                 />
 

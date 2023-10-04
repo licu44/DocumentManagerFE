@@ -5,7 +5,7 @@ import Toolbar from '@mui/material/Toolbar';
 
 export default function index() {
     return (
-        <div >
+        <div style={{ width: '85%' }}>
             <Toolbar />
             <Table/>
         </div>

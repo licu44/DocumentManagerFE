@@ -32,6 +32,7 @@ export const useAuthSignIn = () => {
                 tokenType: 'Bearer',
                 authState: { userId: response.userId, userRole: response.role },
             });
+            window.location.reload();
 
             navigate('/');
         } catch (error) {

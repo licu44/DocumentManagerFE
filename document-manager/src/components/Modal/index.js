@@ -11,13 +11,19 @@ import { UserContext } from '../../context';
 import { useContext } from 'react';
 import { useEffect } from 'react';
 import { useAuthDataContext } from '../../context';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import { saveAs } from 'file-saver';
+import DownloadIcon from '@mui/icons-material/Download';
 
 
-export default function Index({ onClose, id, status, docName, updateTableData }) {
+export default function Index({ onClose, id, status, docName, updateTableData, documentOptions }) {
     const [ selectedFile, setSelectedFile ] = useState(null);
     const [ showForm, setShowForm ] = useState(false);
     const [ formData, setFormData ] = useState({});
     const [ backendResponse, setBackendResponse ] = useState(null);
+    const [ selectedDoc, setSelectedDoc ] = useState(null);
+
     const auth = useAuthHeader();
 
     const userId = useAuthDataContext();
@@ -89,6 +95,29 @@ export default function Index({ onClose, id, status, docName, updateTableData })
         onClose();
     };
 
+    const handleDownload = async () => {
+        try {
+            const response = await axios.get(`https://localhost:7227/api/TextManagement/${id}/${selectedDoc}/download`,
+                {
+                    responseType: 'blob',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': auth(),
+                    },
+                }
+            );
+
+            const blob = new Blob(
+                [ response.data ],
+                {
+                    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                });
+            saveAs(blob, `${selectedDoc} - ${docName}.docx`);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const style = {
         position: 'absolute',
         top: '50%',
@@ -107,13 +136,44 @@ export default function Index({ onClose, id, status, docName, updateTableData })
                 <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
                     {docName}
                 </Typography>
+                {documentOptions &&
+                <>
+                    <Typography
+                        id="modal-modal-description"
+                        variant="h6"
+                        sx={{ mt: 2 }}
+                    >
+                        Please select the document:
+                    </Typography>
+                    <Select
+                        sx={{ mt: 2, width:'100%' }}
+
+                        value={documentOptions.type}
+                        onChange={(event) => {
+                            setSelectedDoc(event.target.value);
+                        }}
+                    >
+                        {documentOptions.map((item) => {
+                            return <MenuItem key={item.id} value={item.type}>
+                                {item.type}
+                            </MenuItem>;
+                        }
+                        )}
+                    </Select>
+                </>
+                }
                 { !selectedFile && !status &&
                     <>
-                        <Button variant="contained" component="label" sx={{ mt: 2, display: 'flex' }}>
-                            <CloudUploadIcon />
+                        { !documentOptions ?
+                            <Button variant="contained" component="label" sx={{ mt: 2, display: 'flex' }}>
+                                <CloudUploadIcon />
                             Upload
-                            <input type="file" hidden onChange={handleUpload} />
-                        </Button>
+                                <input type="file" hidden onChange={handleUpload} />
+                            </Button> :
+                            <Button variant="contained" component="label" sx={{ mt: 2, display: 'flex' }} onClick={handleDownload}>
+                                <DownloadIcon />
+                            Download
+                            </Button>}
                     </>
                 }
                 { selectedFile && backendResponse && showForm &&
@@ -127,11 +187,12 @@ export default function Index({ onClose, id, status, docName, updateTableData })
                         </Typography>
                         <form onSubmit={handleSubmit}>
                             {Object.entries(backendResponse).map(([ key, value ]) => {
+                                { console.log(formData[key], value, 'test'); }
                                 return <TextField
                                     key={key}
                                     name={key}
                                     label={key.charAt(0).toUpperCase() + key.slice(1)}
-                                    value={formData[key] || value}
+                                    value={formData[key] }
                                     onChange={handleChange}
                                     fullWidth
                                     margin="normal"
